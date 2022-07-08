@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Amplify Application
+
+Parameters:
+  Repository:
+    Type: String
+    Description: https://github.com/devops1319/schneider-amplify-test.git
+
+  OauthToken: 
+    Type: String
+    Description: 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
+    NoEcho: true
+
+  # Domain:
+  #   Type: String
+  #   Description: Domain name to host application
+
+Resources:
+  AmplifyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - amplify.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: Amplify
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "amplify:*"
+                Resource: "*"
+
+  AmplifyApp:
+    Type: "AWS::Amplify::App"
+    Properties:
+      Name: Amplify Serverless App
+      Repository: https://github.com/devops1319/schneider-amplify-test.git
+      Description: Amplify example app
+      OauthToken: ghp_S8k7xGF6hegLRo9Y531y4ZVXnHYrIB0Jm4
+      BuildSpec: |-
+        version: 0.1
+		backend:
+		 
+        frontend:
+          phases:
+            preBuild:
+              commands:
+                - npm ci
+            build:
+              commands:
+                - npm run build
+          artifacts:
+            baseDirectory: dist/project-test
+            files:
+              - '**/*'
+          cache:
+            paths:
+              - node_modules/**/*
+      IAMServiceRole: !GetAtt AmplifyRole.Arn
+
+  AmplifyBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      BranchName: master
+      AppId: !GetAtt AmplifyApp.AppId
+      Description: Master Branch
+      EnableAutoBuild: true
